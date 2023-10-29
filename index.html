@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>High School Schedule</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            text-align: center;
+        }
+        label, select, input {
+            display: block;
+            margin-bottom: 10px;
+        }
+        #schedule {
+            margin-top: 20px;
+        }
+        #currentClass {
+            margin-top: 20px;
+        }
+        #toggleForm {
+            text-align: center;
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        img {
+            display: block;
+            margin: 0 auto;
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Logo -->
+        <img src="logo.png" alt="High School Logo">
+        <h1>High School Schedule</h1>
+
+        <div id="formSection">
+            <label for="day">Day:</label>
+            <input type="text" id="day" placeholder="e.g., Monday">
+    
+            <label for="time">Time:</label>
+            <select id="time">
+                <!-- Time options will be generated here -->
+            </select>
+    
+            <label for="class">Class:</label>
+            <input type="text" id="class" placeholder="e.g., Math">
+    
+            <button onclick="addScheduleEntry()">Add Entry</button>
+        </div>
+
+        <div id="toggleForm" onclick="toggleFormVisibility()">Hide Form</div>
+
+        <div id="schedule">
+            <!-- Schedule entries will be displayed here -->
+        </div>
+
+        <div id="currentClass">
+            <h3>Current Class:</h3>
+            <p id="currentClassDisplay">No class currently</p>
+            <h3>Next Class:</h3>
+            <p id="nextClassDisplay">No class scheduled</p>
+        </div>
+    </div>
+
+    <script>
+        // Function to generate time options for the dropdown
+        function generateTimeOptions() {
+            const selectTime = document.getElementById("time");
+            for (let hour = 8; hour <= 16; hour++) {
+                for (let minute = 0; minute < 60; minute++) {
+                    const time = `${hour < 10 ? '0' + hour : hour}:${minute < 10 ? '0' + minute : minute}`;
+                    const option = document.createElement("option");
+                    option.value = (hour < 12 ? time + " AM" : (hour === 12 ? '12:' : hour - 12 + ':') + (minute < 10 ? '0' + minute : minute) + " PM");
+                    option.text = (hour < 12 ? time + " AM" : (hour === 12 ? '12:' : hour - 12 + ':') + (minute < 10 ? '0' + minute : minute) + " PM");
+                    selectTime.appendChild(option);
+                }
+            }
+        }
+
+        // Call the function to generate time options
+        generateTimeOptions();
+
+        const schedule = JSON.parse(localStorage.getItem("schedule")) || {};
+        let formVisible = localStorage.getItem("formVisible") === "true" || true; // Retrieve form visibility state
+
+        function addScheduleEntry() {
+            const day = document.getElementById("day").value;
+            const time = document.getElementById("time").value;
+            const className = document.getElementById("class").value;
+
+            if (day && time && className) {
+                if (!schedule[day]) {
+                    schedule[day] = [];
+                }
+                schedule[day].push({ time, className });
+                displaySchedule();
+                localStorage.setItem("schedule", JSON.stringify(schedule));
+            }
+        }
+
+        function displaySchedule() {
+            const scheduleContainer = document.getElementById("schedule");
+            scheduleContainer.innerHTML = '';
+            let currentClass = '';
+            let nextClass = '';
+
+            for (const day in schedule) {
+                scheduleContainer.innerHTML += `<h3>Schedule for ${day}:</h3>`;
+                schedule[day].forEach(entry => {
+                    scheduleContainer.innerHTML += `<p>${entry.time} - ${entry.className}</p>`;
+
+                    const now = new Date();
+                    const entryTime = new Date(now.toDateString() + ' ' + entry.time);
+                    if (entryTime > now && !nextClass) {
+                        nextClass = `${entry.time} - ${entry.className}`;
+                    }
+                    if (entryTime <= now) {
+                        currentClass = `${entry.time} - ${entry.className}`;
+                    }
+                });
+            }
+
+            if (currentClass) {
+                document.getElementById("currentClassDisplay").textContent = currentClass;
+            } else {
+                document.getElementById("currentClassDisplay").textContent = "Good job! You made it!";
+            }
+
+            if (nextClass) {
+                document.getElementById("nextClassDisplay").textContent = nextClass;
+            } else {
+                document.getElementById("nextClassDisplay").textContent = "No class scheduled";
+            }
+        }
+
+        function toggleFormVisibility() {
+            formVisible = !formVisible;
+            const formSection = document.getElementById("formSection");
+            formSection.style.display = formVisible ? "block" : "none";
+            document.getElementById("toggleForm").textContent = formVisible ? "Hide Form" : "Show Form";
+            // Save form visibility state to local storage
+            localStorage.setItem("formVisible", formVisible.toString());
+        }
+
+        displaySchedule();
+    </script>
+</body>
+</html>
